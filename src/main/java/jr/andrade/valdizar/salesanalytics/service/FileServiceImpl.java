@@ -5,7 +5,6 @@ import jr.andrade.valdizar.salesanalytics.model.Customer;
 import jr.andrade.valdizar.salesanalytics.model.Sale;
 import jr.andrade.valdizar.salesanalytics.model.SaleItem;
 import jr.andrade.valdizar.salesanalytics.model.Salesman;
-import org.springframework.beans.factory.annotation.Value;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,13 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.nonNull;
+import static jr.andrade.valdizar.salesanalytics.utils.PathUtils.PATH_DIR_OUT;
 
 public class FileServiceImpl implements FileService {
-
-    @Value("${homepath.dir.out}")
-    private String directoryOut;
-
-    private Path pathOut;
 
     private static final String FILE_COLUMN_SEPARATOR = "ç";
     private static final String SALE_ITEM_SEPARATOR = ",";
@@ -43,13 +38,12 @@ public class FileServiceImpl implements FileService {
     private static Long salesmanId = 0L;
     private static Long saleId = 0L;
 
+    private String fileNameOut;
+
     @Override
     public void inputFileProcess(Path path) {
         try {
-            if(!Files.isDirectory(Paths.get(String.format("%s", directoryOut)))) {
-                throw new RuntimeException(String.format("Invalid output directory: %s.", directoryOut));
-            }
-            this.pathOut = Paths.get(String.format("%s%s%s.out", directoryOut, File.separator, path.getFileName()));
+            fileNameOut = String.format("%s.out", path.getFileName());
             Files.lines(path).forEach(this::process);
             generateReportData();
         } catch (IOException e) {
@@ -180,7 +174,8 @@ public class FileServiceImpl implements FileService {
     }
 
     private void exportReport(SalesReportDto report) {
-        try(BufferedWriter bw = Files.newBufferedWriter(pathOut)) {
+        Path pathFileOut = Paths.get(String.format("%s%s%s", PATH_DIR_OUT, File.separator, fileNameOut));
+        try(BufferedWriter bw = Files.newBufferedWriter(pathFileOut)) {
             bw.write(String.format("%s%n%s;%s;%s;%s%n",
                     "QTD. CLIENTES;QTD. VENDEDORES;ID MAIOR VENDA;PIOR VENDEDOR",
                     report.getCustomersAmount(),
